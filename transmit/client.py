@@ -8,7 +8,7 @@ from typing import Callable
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
-from trans import Transmit
+from .trans import Transmit
 
 
 class Client(object):

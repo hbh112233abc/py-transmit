@@ -8,7 +8,7 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-from trans import Transmit
+from .trans import Transmit
 
 
 class Server:

@@ -5,6 +5,10 @@ description = "Transmit Server & Client use thrift"
 authors = ["hbh112233abc <hbh112233abc@163.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/hbh112233abc/py-transmit"
+repository = "https://github.com/hbh112233abc/py-transmit"
+documentation = "https://github.com/hbh112233abc/py-transmit"
+keywords = ["thrift", "transmit","json"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
