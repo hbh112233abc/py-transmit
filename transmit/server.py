@@ -38,12 +38,12 @@ class Server:
             return self._error(str(e))
 
 
-    def _error(self, msg:str='error', code:int=0, **kw)->str:
+    def _error(self, msg:str='error', code:int=1, **kw)->str:
         """Error return
 
         Args:
             msg (str, optional): result message. Defaults to 'error'.
-            code (int, optional): result code. Defaults to 0.
+            code (int, optional): result code. Defaults to 1.
 
         Returns:
             str: json string
@@ -57,13 +57,13 @@ class Server:
         print(f'error:{result}')
         return json.dumps(result)
 
-    def _success(self, data={}, msg:str='success', code:int=1, **kw)->str:
+    def _success(self, data={}, msg:str='success', code:int=0, **kw)->str:
         """Success return
 
         Args:
             data (dict, optional): result data. Default to {}.
             msg (str, optional): result message. Defaults to 'success'.
-            code (int, optional): result code. Defaults to 1.
+            code (int, optional): result code. Defaults to 0.
 
         Returns:
             str: 成功信息json字符串
