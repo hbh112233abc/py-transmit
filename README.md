@@ -27,7 +27,7 @@ if __name__ == '__main__':
 > Result
 
 ```shell
-start python server 0.0.0.0:18100
+START SERVER 0.0.0.0:18100
 
 ```
 #### Success Response

@@ -5,16 +5,18 @@ __author__ = 'hbh112233abc@163.com'
 import json
 from typing import Callable
 
+import pretty_errors
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
 from .trans import Transmit
-
+from tool import get_logger
 
 class Client(object):
     def __init__(self, host='127.0.0.1', port=8000):
         self.host = host
         self.port = port
+        self.log = get_logger()
         self.func = ''
         self.transport = TSocket.TSocket(self.host, self.port)
         self.transport = TTransport.TBufferedTransport(self.transport)
@@ -26,9 +28,20 @@ class Client(object):
         return self
 
     def _exec(self, data:dict):
-        json_string = json.dumps(data)
-        res = self.client.invoke(self.func, json_string)
-        return res
+        try:
+            self.log.info(f'----- CALL {self.func} -----')
+            self.log.info(f'----- PARAMS BEGIN -----')
+            self.log.info(data)
+            self.log.info(f'----- PARAMS END -----')
+            json_string = json.dumps(data)
+            res = self.client.invoke(self.func, json_string)
+            self.log.info(f'----- RESULT -----')
+            self.log.info(res)
+            return res
+        except Exception as e:
+            self.log.exception(e)
+        finally:
+            self.log.info(f'----- END {self.func} -----')
 
     def __getattr__(self, __name: str) -> Callable:
         self.func = __name

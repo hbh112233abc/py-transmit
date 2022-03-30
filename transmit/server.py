@@ -3,18 +3,21 @@
 __author__ = 'hbh112233abc@163.com'
 
 import json
+import pretty_errors
 
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
 from .trans import Transmit
+from tool import get_logger
 
 
 class Server:
     def __init__(self, port=8000, host='0.0.0.0'):
         self.port = port
         self.host = host
+        self.log = get_logger()
 
     def run(self):
         processor = Transmit.Processor(self)
@@ -23,19 +26,27 @@ class Server:
         pfactory = TBinaryProtocol.TBinaryProtocolFactory()
         server = TServer.TThreadPoolServer(processor, transport, tfactory,
                                            pfactory)
-        print(f'start python server {self.host}:{self.port}')
+        self.log.info(f'START SERVER {self.host}:{self.port}')
         server.serve()
 
     def invoke(self, func, data):
         try:
             if not getattr(self, func):
                 raise Exception(f'{func} not found')
-
+            self.log.info(f'----- CALL {func} -----')
             params = json.loads(data)
+
+            self.log.info(f'----- PARAMS BEGIN -----')
+            self.log.info(params)
+            self.log.info(f'----- PARAMS END -----')
+
             result = getattr(self, func)(**params)
             return self._success(result)
         except Exception as e:
+            self.log.exception(e)
             return self._error(str(e))
+        finally:
+            self.log.info(f'----- END {func} -----')
 
 
     def _error(self, msg:str='error', code:int=1, **kw)->str:
@@ -54,7 +65,7 @@ class Server:
         }
         if kw:
             result.update(kw)
-        print(f'error:{result}')
+        self.log.error(f'ERROR:{result}')
         return json.dumps(result)
 
     def _success(self, data={}, msg:str='success', code:int=0, **kw)->str:
@@ -75,5 +86,5 @@ class Server:
         }
         if kw:
             result.update(kw)
-        print(f'success:{result}')
+        self.log.info(f'SUCCESS:{result}')
         return json.dumps(result, ensure_ascii=False, indent=True)
