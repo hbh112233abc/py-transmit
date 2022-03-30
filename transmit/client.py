@@ -10,7 +10,7 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
 from .trans import Transmit
-from tool import get_logger
+from .tool import get_logger
 
 class Client(object):
     def __init__(self, host='127.0.0.1', port=8000):
@@ -25,6 +25,7 @@ class Client(object):
 
     def __enter__(self):
         self.transport.open()
+        self.log.info(f"CONNECT SERVER {self.host}:{self.port}")
         return self
 
     def _exec(self, data:dict):
@@ -36,7 +37,7 @@ class Client(object):
             json_string = json.dumps(data)
             res = self.client.invoke(self.func, json_string)
             self.log.info(f'----- RESULT -----')
-            self.log.info(res)
+            self.log.info(f"\n{res}")
             return res
         except Exception as e:
             self.log.exception(e)
@@ -49,3 +50,4 @@ class Client(object):
 
     def __exit__(self, exc_type, exc_value, trace):
         self.transport.close()
+        self.log.info(f"DISCONNECT SERVER {self.host}:{self.port}")

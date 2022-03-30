@@ -10,7 +10,7 @@ from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
 from .trans import Transmit
-from tool import get_logger
+from .tool import get_logger
 
 
 class Server:

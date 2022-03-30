@@ -1,4 +1,4 @@
-from server import Server
+from transmit.server import Server
 
 class TestServer(Server):
     def __init__(self,port=18100):

@@ -9,7 +9,7 @@ pip install transmit
 
 ### Server
 ```
-from server import Server
+from transmit.server import Server
 
 class TestServer(Server):
     def __init__(self,port=18100):
@@ -50,7 +50,7 @@ START SERVER 0.0.0.0:18100
 
 ### Client
 ```
-from client import Client
+from transmit.client import Client
 
 with Client("127.0.0.1",18100) as c:
     result = c.test_function({"msg":"hello world"})

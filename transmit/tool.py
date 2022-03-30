@@ -3,6 +3,8 @@
 __author__ = 'hbh112233abc@163.com'
 
 import os
+import sys
+import platform
 
 from loguru import logger
 
@@ -47,7 +49,7 @@ def get_logger(
         diagnose=True
     )
 
-    logger.info(f'-->System:{platform.platform()}-->')
-    logger.info(f'-->Python:{sys.version}-->')
-    logger.info(f'log_path: {log_path} [{level}]')
+    logger.info(f'SYSTEM:{platform.platform()}')
+    logger.info(f'PYTHON:{sys.version}')
+    logger.info(f'LOG: {log_path} [{level}]')
     return logger
