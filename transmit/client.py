@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-__author__ = 'hbh112233abc@163.com'
+__author__ = "hbh112233abc@163.com"
+
 
 import json
 from typing import Callable
@@ -10,14 +11,15 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
 from .trans import Transmit
-from .tool import get_logger
+from .log import logger
+
 
 class Client(object):
-    def __init__(self, host='127.0.0.1', port=8000):
+    def __init__(self, host="127.0.0.1", port=8000):
         self.host = host
         self.port = port
-        self.log = get_logger()
-        self.func = ''
+        self.log = logger
+        self.func = ""
         self.transport = TSocket.TSocket(self.host, self.port)
         self.transport = TTransport.TBufferedTransport(self.transport)
         protocol = TBinaryProtocol.TBinaryProtocol(self.transport)
@@ -28,21 +30,27 @@ class Client(object):
         self.log.info(f"CONNECT SERVER {self.host}:{self.port}")
         return self
 
-    def _exec(self, data:dict):
+    def _exec(self, data: dict):
         try:
-            self.log.info(f'----- CALL {self.func} -----')
-            self.log.info(f'----- PARAMS BEGIN -----')
+            self.log.info(f"----- CALL {self.func} -----")
+            self.log.info(f"----- PARAMS BEGIN -----")
             self.log.info(data)
-            self.log.info(f'----- PARAMS END -----')
-            json_string = json.dumps(data)
-            res = self.client.invoke(self.func, json_string)
-            self.log.info(f'----- RESULT -----')
+            if not isinstance(data, dict):
+                raise TypeError("params must be dict")
+            params = json.dumps(data)
+            self.log.info(f"----- PARAMS END -----")
+            res = self.client.invoke(self.func, params)
+            self.log.info(f"----- RESULT -----")
             self.log.info(f"\n{res}")
-            return res
+            result = json.loads(res)
+            if result["code"] != 0:
+                raise Exception(f"{result['code']}: {result['msg']}")
+            return result.get("data")
         except Exception as e:
             self.log.exception(e)
+            raise e
         finally:
-            self.log.info(f'----- END {self.func} -----')
+            self.log.info(f"----- END {self.func} -----")
 
     def __getattr__(self, __name: str) -> Callable:
         self.func = __name
