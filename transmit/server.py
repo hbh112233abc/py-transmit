@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
+import argparse
 import json
+import signal
+import sys
+import time
 from typing import Any
 
 import pretty_errors
@@ -12,8 +16,8 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-from .trans import Transmit
-from .log import logger
+from transmit.trans import Transmit
+from transmit.log import logger
 
 
 class Result(BaseModel):
@@ -23,53 +27,60 @@ class Result(BaseModel):
 
 
 class Server:
-    def __init__(self, port=8000, host="0.0.0.0"):
-        self.port = port
-        self.host = host
+    def __init__(self, port: int = 0, host: str = ""):
         self.log = logger
 
+        parser = argparse.ArgumentParser(description="Thrift Server")
+        parser.add_argument("--host", type=str, default="0.0.0.0", help="host")
+        parser.add_argument("--port", type=int, default=8000, help="port")
+        parser.add_argument("--debug", type=bool, default=False, help="debug mode")
+
+        args = parser.parse_args()
+        self.host = host if host else args.host
+        self.port = port if port else args.port
+        self.debug = args.debug
+
     def run(self):
+        # 创建Thrift服务处理器
         processor = Transmit.Processor(self)
+
+        # 创建TSocket
         transport = TSocket.TServerSocket(self.host, self.port)
+
+        # 创建传输方式
         tfactory = TTransport.TBufferedTransportFactory()
         pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+
+        # 创建线程池服务器
         server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
         self.log.info(f"START SERVER {self.host}:{self.port}")
+
         server.serve()
 
     def invoke(self, func, data):
         try:
             if not getattr(self, func):
                 raise Exception(f"{func} not found")
+
             self.log.info(f"----- CALL {func} -----")
+
             params = json.loads(data)
             if not isinstance(params, dict):
                 raise Exception("params must be dict json")
 
-            self.log.info(f"----- PARAMS BEGIN -----")
-            self.log.info(params)
-            self.log.info(f"----- PARAMS END -----")
+            if self.debug:
+                self.log.info(f"----- PARAMS BEGIN -----")
+                self.log.info(params)
+                self.log.info(f"----- PARAMS END -----")
+                self.log.info(f"----- START {func} -----")
+                t = time.time()
 
             result = getattr(self, func)(**params)
-            return self._success(result)
-        except Exception as e:
-            self.log.exception(e)
-            return self._error(str(e))
-        finally:
-            self.log.info(f"----- END {func} -----")
 
-    def call(self, func, args, kwargs):
-        try:
-            if not getattr(self, func):
-                raise Exception(f"{func} not found")
-            self.log.info(f"----- CALL {func} -----")
+            if self.debug:
+                self.log.info(result)
+                self.log.info(f"----- USED {time.time() - t:.2f}s -----")
 
-            self.log.info(f"----- PARAMS BEGIN -----")
-            self.log.info(f"[args] {args}")
-            self.log.info(f"[kwargs] {kwargs}")
-            self.log.info(f"----- PARAMS END -----")
-
-            result = getattr(self, func)(*args, **kwargs)
             return self._success(result)
         except Exception as e:
             self.log.exception(e)
@@ -109,3 +120,7 @@ class Server:
         )
         self.log.info(f"SUCCESS:{result}")
         return result.model_dump_json(indent=2)
+
+
+if __name__ == "__main__":
+    Server().run()

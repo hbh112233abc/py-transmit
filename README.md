@@ -1,6 +1,7 @@
 # Transmit Server & Client
 
 ## Install
+
 ```
 pip install transmit
 ```
@@ -8,6 +9,7 @@ pip install transmit
 ## Usage
 
 ### Server
+
 ```
 from transmit.server import Server
 
@@ -24,13 +26,16 @@ if __name__ == '__main__':
     ts.run()
 
 ```
+
 > Result
 
 ```shell
 START SERVER 0.0.0.0:18100
 
 ```
+
 #### Success Response
+
 ```
 {
     "code":1,
@@ -38,17 +43,19 @@ START SERVER 0.0.0.0:18100
     "data":"handle result data. AnyType"
 }
 ```
+
 #### Error Response
+
 ```
 {
     "code":0,
     "msg":"error message",
-    "data":{}
+    "data":null
 }
 ```
 
-
 ### Client
+
 ```
 from transmit.client import Client
 
@@ -58,18 +65,41 @@ with Client("127.0.0.1",18100) as c:
     print(result)
 
 ```
+
 > Result
 
 ```shell
-<class 'str'>
-{
- "code": 1,
- "msg": "success",
- "data": {
-  "say": "Happy everyday!!!"
- }
-}
+> <class 'dict'>
+> {'say': 'Happy everyday!!!'}
+```
+
+### Advanced Usage
+
+1. debug mode
+
+debug mode will print and log all request and response data.
+
+```shell
+# debug server
+> python test_server.py --debug 1
+```
+
+```python
+# debug client
+with Client("127.0.0.1",18100,debug=True) as c:
+    ...
+```
+
+2. server cli setting
+
+```shell
+> python test_server.py --host "127.0.0.1" --port 3000 --debug 1
 ```
 
 ### Refs
+
 [Thrift](https://thrift.apache.org/)
+
+```
+
+```
