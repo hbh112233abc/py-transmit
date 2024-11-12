@@ -2,91 +2,111 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
-import argparse
-import json
-import signal
-import sys
 import time
-from typing import Any
+import json
+import argparse
+from typing import Literal
 
-import pretty_errors
-from pydantic import BaseModel
-
-from thrift.transport import TSocket, TTransport
-from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
+from thrift.protocol import TBinaryProtocol
+from thrift.transport import TSocket, TTransport
+from thrift.server.TProcessPoolServer import TProcessPoolServer
 
-from transmit.trans import Transmit
-from transmit.log import logger
-
-
-class Result(BaseModel):
-    code: int = 0
-    msg: str = ""
-    data: Any = None
+from .log import logger
+from .util import Result
+from .trans import Transmit
 
 
 class Server:
-    def __init__(self, port: int = 0, host: str = ""):
-        self.log = logger
+    def __init__(
+        self,
+        port: int = 0,
+        host: str = "",
+        workers: int = 0,
+        server_type: Literal["", "thread", "process"] = "",
+    ):
+        # logger = logger
 
         parser = argparse.ArgumentParser(description="Thrift Server")
         parser.add_argument("--host", type=str, default="0.0.0.0", help="host")
         parser.add_argument("--port", type=int, default=8000, help="port")
+        parser.add_argument("--workers", type=int, default=3, help="workers")
+        parser.add_argument(
+            "--type",
+            type=str,
+            choices=["thread", "process"],
+            default="thread",
+            help="server type one of `thread`,`process`",
+        )
         parser.add_argument("--debug", type=bool, default=False, help="debug mode")
 
         args = parser.parse_args()
         self.host = host if host else args.host
         self.port = port if port else args.port
+        self.workers = workers if workers else args.workers
+        self.server_type = server_type if server_type else args.type
         self.debug = args.debug
 
     def run(self):
         # 创建Thrift服务处理器
         processor = Transmit.Processor(self)
-
         # 创建TSocket
         transport = TSocket.TServerSocket(self.host, self.port)
-
         # 创建传输方式
         tfactory = TTransport.TBufferedTransportFactory()
         pfactory = TBinaryProtocol.TBinaryProtocolFactory()
 
-        # 创建线程池服务器
-        server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
-        self.log.info(f"START SERVER {self.host}:{self.port}")
+        try:
+            if self.server_type == "thread":
+                # 创建线程池服务器
+                server = TServer.TThreadPoolServer(
+                    processor, transport, tfactory, pfactory, daemon=True
+                )
+                server.setNumThreads(self.workers)
+            elif self.server_type == "process":
+                # 创建进程池服务器
+                server = TProcessPoolServer(processor, transport, tfactory, pfactory)
+                server.setNumWorkers(self.workers)
 
-        server.serve()
+            logger.info(
+                f"START [{self.workers}] {self.server_type.capitalize()} Server {self.host}:{self.port}"
+            )
+
+            server.serve()
+
+        except Exception as e:
+            logger.exception(e)
 
     def invoke(self, func, data):
         try:
             if not getattr(self, func):
                 raise Exception(f"{func} not found")
 
-            self.log.info(f"----- CALL {func} -----")
+            logger.info(f"----- CALL {func} -----")
 
             params = json.loads(data)
             if not isinstance(params, dict):
                 raise Exception("params must be dict json")
 
             if self.debug:
-                self.log.info(f"----- PARAMS BEGIN -----")
-                self.log.info(params)
-                self.log.info(f"----- PARAMS END -----")
-                self.log.info(f"----- START {func} -----")
+                logger.info(f"----- PARAMS BEGIN -----")
+                logger.info(params)
+                logger.info(f"----- PARAMS END -----")
+                logger.info(f"----- START {func} -----")
                 t = time.time()
 
             result = getattr(self, func)(**params)
 
             if self.debug:
-                self.log.info(result)
-                self.log.info(f"----- USED {time.time() - t:.2f}s -----")
+                logger.info(result)
+                logger.info(f"----- USED {time.time() - t:.2f}s -----")
 
             return self._success(result)
         except Exception as e:
-            self.log.exception(e)
+            logger.exception(e)
             return self._error(str(e))
         finally:
-            self.log.info(f"----- END {func} -----")
+            logger.info(f"----- END {func} -----")
 
     def _error(self, msg: str = "error", code: int = 1) -> str:
         """Error return
@@ -99,7 +119,7 @@ class Server:
             str: json string
         """
         result = Result(code=code, msg=msg)
-        self.log.error(f"ERROR:{result}")
+        logger.error(f"ERROR:{result}")
         return result.model_dump_json(indent=2)
 
     def _success(self, data={}, msg: str = "success", code: int = 0) -> str:
@@ -118,7 +138,7 @@ class Server:
             msg=msg,
             data=data,
         )
-        self.log.info(f"SUCCESS:{result}")
+        logger.info(f"SUCCESS:{result}")
         return result.model_dump_json(indent=2)
 
 

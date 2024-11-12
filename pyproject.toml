@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "transmit"
-version = "0.3.0"
+version = "0.4.0"
 description = "Transmit Server & Client use thrift"
 authors = [ "hbh112233abc <hbh112233abc@163.com>",]
 license = "MIT"
@@ -20,9 +20,8 @@ default = true
 
 [tool.poetry.dependencies]
 python = "^3.7"
-thrift = "^0.15.0"
-loguru = "^0.6.0"
-pretty-errors = "^1.2.25"
+thrift = "^0.21.0"
+loguru = "^0.7.0"
 pydantic = "^2.4.2"
 
 [tool.poetry.dev-dependencies]

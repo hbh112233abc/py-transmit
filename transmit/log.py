@@ -25,6 +25,7 @@ logger.add(
     retention="10 days",
     backtrace=True,
     diagnose=True,
+    enqueue=True,
 )
 
 logger.info(f"SYSTEM:{platform.platform()}")

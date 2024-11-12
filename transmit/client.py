@@ -2,24 +2,22 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
-
 import json
 import time
 from typing import Callable
 
-import pretty_errors
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
-from .trans import Transmit
 from .log import logger
+from .util import Result
+from .trans import Transmit
 
 
 class Client(object):
     def __init__(self, host: str = "127.0.0.1", port: int = 8000, debug: bool = False):
         self.host = host
         self.port = port
-        self.log = logger
         self.debug = debug
         self.func = ""
         self.transport = TSocket.TSocket(self.host, self.port)
@@ -29,7 +27,7 @@ class Client(object):
 
     def __enter__(self):
         self.transport.open()
-        self.log.info(f"CONNECT SERVER {self.host}:{self.port}")
+        logger.info(f"CONNECT SERVER {self.host}:{self.port}")
         return self
 
     def _exec(self, data: dict):
@@ -37,31 +35,31 @@ class Client(object):
             if not isinstance(data, dict):
                 raise TypeError("params must be dict")
 
-            self.log.info(f"----- CALL {self.func} -----")
+            logger.info(f"----- CALL {self.func} -----")
 
             if self.debug:
-                self.log.info(f"----- PARAMS BEGIN -----")
-                self.log.info(data)
-                self.log.info(f"----- PARAMS END -----")
+                logger.info(f"----- PARAMS BEGIN -----")
+                logger.info(data)
+                logger.info(f"----- PARAMS END -----")
                 t = time.time()
 
             params = json.dumps(data)
             res = self.client.invoke(self.func, params)
 
             if self.debug:
-                self.log.info(f"----- RESULT -----")
-                self.log.info(f"\n{res}")
-                self.log.info(f"----- USED {time.time() - t:.2f} s -----")
+                logger.info(f"----- RESULT -----")
+                logger.info(f"\n{res}")
+                logger.info(f"----- USED {time.time() - t:.2f} s -----")
 
-            result = json.loads(res)
-            if result["code"] != 0:
-                raise Exception(f"{result['code']}: {result['msg']}")
-            return result.get("data")
+            result = Result.model_validate_json(res)
+            if result.code != 0:
+                raise Exception(f"{result.code}: {result.msg}")
+            return result.data
         except Exception as e:
-            self.log.error(e)
+            logger.error(e)
             raise e
         finally:
-            self.log.info(f"----- END {self.func} -----")
+            logger.info(f"----- END {self.func} -----")
 
     def __getattr__(self, __name: str) -> Callable:
         self.func = __name
@@ -69,4 +67,4 @@ class Client(object):
 
     def __exit__(self, exc_type, exc_value, trace):
         self.transport.close()
-        self.log.info(f"DISCONNECT SERVER {self.host}:{self.port}")
+        logger.warning(f"DISCONNECT SERVER {self.host}:{self.port}")
