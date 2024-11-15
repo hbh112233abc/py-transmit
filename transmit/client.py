@@ -6,10 +6,10 @@ import json
 import time
 from typing import Callable
 
+from loguru import logger
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
-from .log import logger
 from .util import Result
 from .trans import Transmit
 

@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
+import signal
 import time
 import json
 import argparse
 from typing import Literal
 
+from loguru import logger
 from thrift.server import TServer
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TSocket, TTransport
 from thrift.server.TProcessPoolServer import TProcessPoolServer
 
-from .log import logger
 from .util import Result
 from .trans import Transmit
 
@@ -25,8 +26,6 @@ class Server:
         workers: int = 0,
         server_type: Literal["", "thread", "process"] = "",
     ):
-        # logger = logger
-
         parser = argparse.ArgumentParser(description="Thrift Server")
         parser.add_argument("--host", type=str, default="0.0.0.0", help="host")
         parser.add_argument("--port", type=int, default=8000, help="port")
@@ -63,6 +62,13 @@ class Server:
                     processor, transport, tfactory, pfactory, daemon=True
                 )
                 server.setNumThreads(self.workers)
+
+                # 捕获SIGINT信号
+                def signal_handler(signal, frame):
+                    print("You pressed Ctrl+C!")
+                    server.stop()
+
+                signal.signal(signal.SIGINT, signal_handler)
             elif self.server_type == "process":
                 # 创建进程池服务器
                 server = TProcessPoolServer(processor, transport, tfactory, pfactory)

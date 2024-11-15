@@ -93,7 +93,7 @@ with Client("127.0.0.1",18100,debug=True) as c:
 2. server cli setting
 
 ```shell
-> python test_server.py --host="127.0.0.1" --port=3000 --workers=3 --debug=1
+> python test_server.py --host="127.0.0.1" --port=3000 --workers=3 --type=<process|thread> --debug=1
 ```
 
 ### Refs

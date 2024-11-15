@@ -28,6 +28,6 @@ logger.add(
     enqueue=True,
 )
 
-logger.info(f"SYSTEM:{platform.platform()}")
-logger.info(f"PYTHON:{sys.version}")
-logger.info(f"LOG: {log_path} [{level}]")
+logger.debug(f"SYSTEM:{platform.platform()}")
+logger.debug(f"PYTHON:{sys.version}")
+logger.debug(f"LOG: {log_path} [{level}]")
