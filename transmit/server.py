@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
-import signal
 import time
 import json
 import argparse
@@ -63,12 +62,6 @@ class Server:
                 )
                 server.setNumThreads(self.workers)
 
-                # 捕获SIGINT信号
-                def signal_handler(signal, frame):
-                    print("You pressed Ctrl+C!")
-                    server.stop()
-
-                signal.signal(signal.SIGINT, signal_handler)
             elif self.server_type == "process":
                 # 创建进程池服务器
                 server = TProcessPoolServer(processor, transport, tfactory, pfactory)
