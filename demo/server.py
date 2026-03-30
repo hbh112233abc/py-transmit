@@ -1,4 +1,4 @@
-from transmit.server import Server
+from src.server import Server
 
 
 class TestServer(Server):
