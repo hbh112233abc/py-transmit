@@ -1,6 +1,6 @@
 from transmit.client import Client
 
-with Client("127.0.0.1", 18100) as c:
+with Client("127.0.0.1", 18100, True) as c:
     result = c.test_function({"msg": "hello world"})
     print(type(result))
     print(result)

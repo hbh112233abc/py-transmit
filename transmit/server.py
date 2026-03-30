@@ -73,50 +73,58 @@ class Server:
         if not isinstance(self.workers, int) or self.workers < 1:
             raise ValueError("workers must be a positive integer")
 
-    def run(self):
+        # 服务初始化
+        self.server_init()
+
         # 注册信号处理
-        def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, shutting down gracefully...")
-            self._shutdown = True
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
 
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-
+    def server_init(self):
         # 创建Thrift服务处理器
         processor = Transmit.Processor(self)
         # 创建TSocket
-        transport = TSocket.TServerSocket(self.host, self.port)
+        self.transport = TSocket.TServerSocket(self.host, self.port)
         # 创建传输方式
         tfactory = TTransport.TBufferedTransportFactory()
         pfactory = TBinaryProtocol.TBinaryProtocolFactory()
 
+        if self.server_type == "thread":
+            # 创建线程池服务器
+            self.server = TServer.TThreadPoolServer(
+                processor, self.transport, tfactory, pfactory, daemon=True
+            )
+            self.server.setNumThreads(self.workers)
+
+        elif self.server_type == "process":
+            # 创建进程池服务器
+            # 注意：确保 handler 类及其属性是可序列化的
+            self.server = TProcessPoolServer(
+                processor, self.transport, tfactory, pfactory
+            )
+            self.server.setNumWorkers(self.workers)
+
+        return self.server
+
+    def signal_handler(self, signum, frame):
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        self.server.stop()
+        self._shutdown = True
+
+    def run(self):
         try:
-            if self.server_type == "thread":
-                # 创建线程池服务器
-                server = TServer.TThreadPoolServer(
-                    processor, transport, tfactory, pfactory, daemon=True
-                )
-                server.setNumThreads(self.workers)
-
-            elif self.server_type == "process":
-                # 创建进程池服务器
-                # 注意：确保 handler 类及其属性是可序列化的
-                server = TProcessPoolServer(processor, transport, tfactory, pfactory)
-                server.setNumWorkers(self.workers)
-
             logger.info(
                 f"START [{self.workers}] {self.server_type.capitalize()} Server {self.host}:{self.port}"
             )
-
-            server.serve()
-
+            breakpoint()
+            self.server.serve()
         except Exception as e:
             logger.exception(e)
         finally:
             # 确保正确关闭传输层资源
             try:
-                if hasattr(transport, "close"):
-                    transport.close()
+                if hasattr(self.server.serverTransport, "close"):
+                    self.server.serverTransport.close()
             except Exception as e:
                 logger.warning(f"Failed to close transport: {e}")
 

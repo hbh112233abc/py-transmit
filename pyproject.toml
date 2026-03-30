@@ -1,9 +1,9 @@
 [project]
 name = "transmit"
-version = "0.4.2"
+version = "0.4.3"
 description = "Transmit Server & Client use thrift"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 dependencies = [
     "loguru>=0.7.3",
     "pydantic>=2.5.3",
