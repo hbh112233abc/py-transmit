@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
+import os
 import time
 import json
+import signal
 import argparse
 from typing import Literal
 
@@ -18,6 +20,13 @@ from .trans import Transmit
 
 
 class Server:
+    """Thrift服务器基类
+
+    注意:
+    - 使用进程池模式时，handler 必须是可序列化的
+    - 避免在 handler 中持有不可序列化的状态（如文件句柄、锁等）
+    """
+
     def __init__(
         self,
         port: int = 0,
@@ -25,18 +34,33 @@ class Server:
         workers: int = 0,
         server_type: Literal["", "thread", "process"] = "",
     ):
+        self._shutdown = False
         parser = argparse.ArgumentParser(description="Thrift Server")
-        parser.add_argument("--host", type=str, default="0.0.0.0", help="host")
-        parser.add_argument("--port", type=int, default=8000, help="port")
-        parser.add_argument("--workers", type=int, default=3, help="workers")
+        # 读取环境变量作为parser的默认值
+        env_host = os.getenv("HOST", "0.0.0.0")
+        try:
+            env_port = int(os.getenv("PORT", "8000"))
+        except (ValueError, TypeError):
+            env_port = 8000
+
+        try:
+            env_workers = int(os.getenv("WORKERS", "3"))
+        except (ValueError, TypeError):
+            env_workers = 3
+        env_server_type = os.getenv("SERVER_TYPE", "thread")
+        env_debug = os.getenv("DEBUG", "False") in ("True", "true", "1")
+
+        parser.add_argument("--host", type=str, default=env_host, help="host")
+        parser.add_argument("--port", type=int, default=env_port, help="port")
+        parser.add_argument("--workers", type=int, default=env_workers, help="workers")
         parser.add_argument(
             "--type",
             type=str,
             choices=["thread", "process"],
-            default="thread",
+            default=env_server_type,
             help="server type one of `thread`,`process`",
         )
-        parser.add_argument("--debug", type=bool, default=False, help="debug mode")
+        parser.add_argument("--debug", type=bool, default=env_debug, help="debug mode")
 
         args = parser.parse_args()
         self.host = host if host else args.host
@@ -45,7 +69,19 @@ class Server:
         self.server_type = server_type if server_type else args.type
         self.debug = args.debug
 
+        # 确保类型正确
+        if not isinstance(self.workers, int) or self.workers < 1:
+            raise ValueError("workers must be a positive integer")
+
     def run(self):
+        # 注册信号处理
+        def signal_handler(signum, frame):
+            logger.info(f"Received signal {signum}, shutting down gracefully...")
+            self._shutdown = True
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
         # 创建Thrift服务处理器
         processor = Transmit.Processor(self)
         # 创建TSocket
@@ -64,6 +100,7 @@ class Server:
 
             elif self.server_type == "process":
                 # 创建进程池服务器
+                # 注意：确保 handler 类及其属性是可序列化的
                 server = TProcessPoolServer(processor, transport, tfactory, pfactory)
                 server.setNumWorkers(self.workers)
 
@@ -75,15 +112,31 @@ class Server:
 
         except Exception as e:
             logger.exception(e)
+        finally:
+            # 确保正确关闭传输层资源
+            try:
+                if hasattr(transport, "close"):
+                    transport.close()
+            except Exception as e:
+                logger.warning(f"Failed to close transport: {e}")
 
     def invoke(self, func, data):
         try:
+            # 防止调用私有方法和特殊方法
+            if func.startswith("_"):
+                raise Exception(f"Forbidden method: {func}")
+
             if not getattr(self, func):
                 raise Exception(f"{func} not found")
 
             logger.info(f"----- CALL {func} -----")
 
-            params = json.loads(data)
+            params = json.loads(
+                data, parse_constant=lambda x: None
+            )  # 防止 NaN/Infinity
+            # 验证 JSON 深度和大小
+            if len(data) > 100 * 1024 * 1024:  # 100MB 限制
+                raise Exception("JSON data too large")
             if not isinstance(params, dict):
                 raise Exception("params must be dict json")
 
@@ -117,27 +170,25 @@ class Server:
         Returns:
             str: json string
         """
-        result = Result(code=code, msg=msg)
+        result = Result.error(msg, code)
         logger.error(f"ERROR:{result}")
         return result.model_dump_json(indent=2)
 
-    def _success(self, data={}, msg: str = "success", code: int = 0) -> str:
+    def _success(self, data: dict = None, msg: str = "success", code: int = 0) -> str:
         """Success return
 
         Args:
-            data (dict, optional): result data. Default to {}.
+            data (dict, optional): result data. Default to None.
             msg (str, optional): result message. Defaults to 'success'.
             code (int, optional): result code. Defaults to 0.
 
         Returns:
             str: 成功信息json字符串
         """
-        result = Result(
-            code=code,
-            msg=msg,
-            data=data,
-        )
-        logger.info(f"SUCCESS:{result}")
+        if data is None:
+            data = {}
+        result = Result.success(data, msg, code)
+        logger.debug(f"SUCCESS:{result}")
         return result.model_dump_json(indent=2)
 
 

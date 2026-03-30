@@ -1,27 +1,11 @@
-[build-system]
-requires = [ "poetry-core>=1.0.0",]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry]
+[project]
 name = "transmit"
 version = "0.4.2"
 description = "Transmit Server & Client use thrift"
-authors = [ "hbh112233abc <hbh112233abc@163.com>",]
-license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/hbh112233abc/py-transmit"
-repository = "https://github.com/hbh112233abc/py-transmit"
-documentation = "https://github.com/hbh112233abc/py-transmit"
-keywords = [ "thrift", "transmit", "json",]
-[[tool.poetry.source]]
-name = "pypi.tuna.tsinghua.edu.cn"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-default = true
-
-[tool.poetry.dependencies]
-python = "^3.7"
-thrift = "^0.21.0"
-loguru = "^0.7.0"
-pydantic = "^2.4.2"
-
-[tool.poetry.dev-dependencies]
+requires-python = ">=3.7"
+dependencies = [
+    "loguru>=0.7.3",
+    "pydantic>=2.5.3",
+    "thrift>=0.22.0",
+]

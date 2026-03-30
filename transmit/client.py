@@ -4,7 +4,7 @@ __author__ = "hbh112233abc@163.com"
 
 import json
 import time
-from typing import Callable
+from typing import Callable, Any
 
 from loguru import logger
 from thrift.transport import TSocket, TTransport
@@ -65,6 +65,6 @@ class Client(object):
         self.func = __name
         return self._exec
 
-    def __exit__(self, exc_type, exc_value, trace):
+    def __exit__(self, exc_type: Any, exc_value: Any, trace: Any):
         self.transport.close()
         logger.warning(f"DISCONNECT SERVER {self.host}:{self.port}")
