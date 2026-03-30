@@ -116,7 +116,6 @@ class Server:
             logger.info(
                 f"START [{self.workers}] {self.server_type.capitalize()} Server {self.host}:{self.port}"
             )
-            breakpoint()
             self.server.serve()
         except Exception as e:
             logger.exception(e)
@@ -167,6 +166,12 @@ class Server:
             return self._error(str(e))
         finally:
             logger.info(f"----- END {func} -----")
+
+    def ping(self) -> dict:
+        """
+        健康检查方法，供 Docker 健康检查使用
+        """
+        return "pong"
 
     def _error(self, msg: str = "error", code: int = 1) -> str:
         """Error return

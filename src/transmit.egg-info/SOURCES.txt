@@ -2,6 +2,7 @@ README.md
 pyproject.toml
 src/__init__.py
 src/client.py
+src/health_check.py
 src/log.py
 src/server.py
 src/util.py

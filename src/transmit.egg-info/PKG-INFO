@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: transmit
-Version: 0.4.3
+Version: 0.4.4
 Summary: Transmit Server & Client use thrift
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
