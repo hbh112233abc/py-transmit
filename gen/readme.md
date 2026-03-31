@@ -10,8 +10,8 @@
 [thrift框架搭建的php服务端/客户端代码](https://blog.csdn.net/shi_yi_fei/article/details/62893605)
 
 ```
-.\thrift -out ../transmit --gen py transmit.thrift
+.\thrift -out ../src/transmit --gen py transmit.thrift
 .\thrift --gen php:server transmit.thrift
 .\thrift --gen java transmit.thrift
-.\thrift -r --gen go transmit.thrift 
+.\thrift -r --gen go transmit.thrift
 ```

@@ -96,11 +96,13 @@ with Client("127.0.0.1",18100,debug=True) as c:
 > python test_server.py --host="127.0.0.1" --port=3000 --workers=3 --type=<process|thread> --debug=1
 ```
 
+3. docker health check
+
+```shell
+python -m transmit.health_check
+```
+
 ### Refs
 
 [Thrift](https://thrift.apache.org/)
 [thrift几种server模式的比较](https://blog.csdn.net/hzllblzjily/article/details/50645114)
-
-```
-
-```

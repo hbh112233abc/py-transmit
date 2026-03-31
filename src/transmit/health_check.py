@@ -5,7 +5,7 @@
 import os
 import sys
 import argparse
-from src.client import Client
+from transmit.client import Client
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
