@@ -113,7 +113,9 @@ class Server:
 
     def signal_handler(self, signum, frame):
         logger.info(f"Received signal {signum}, shutting down gracefully...")
-        self.server.stop()
+        if getattr(self.server, "stop"):
+            self.server.stop()
+        sys.exit(0)
         self._shutdown = True
 
     def run(self):
