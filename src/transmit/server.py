@@ -3,6 +3,7 @@
 __author__ = "hbh112233abc@163.com"
 
 import os
+import sys
 import time
 import json
 import signal
@@ -61,8 +62,12 @@ class Server:
             help="server type one of `thread`,`process`",
         )
         parser.add_argument("--debug", type=bool, default=env_debug, help="debug mode")
+        # pytest 环境检测：如果 pytest 已加载到 sys.modules 中，说明正在运行测试
+        if "pytest" in sys.modules:
+            args = parser.parse_args(args=[])
+        else:
+            args = parser.parse_args()
 
-        args = parser.parse_args()
         self.host = host if host else args.host
         self.port = port if port else args.port
         self.workers = workers if workers else args.workers

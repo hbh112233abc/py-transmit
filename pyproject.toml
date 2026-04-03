@@ -1,6 +1,6 @@
 [project]
 name = "transmit"
-version = "0.4.4"
+version = "0.5.1"
 description = "Transmit Server & Client use thrift"
 readme = "README.md"
 authors = [
